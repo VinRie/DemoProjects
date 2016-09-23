@@ -4,10 +4,10 @@ Simple Mandelbrot Set Explorer
 
 ## Keybindings
 
-Zoom in: q
-Zoom out: e
-Move left: a
-Move right: d
-Move up: w
-move down: s
-Left mouse click: center to mouse position 
+Zoom in: q <br>
+Zoom out: e <br>
+Move left: a <br>
+Move right: d <br>
+Move up: w <br>
+move down: s <br>
+Left mouse click: center to mouse position  <br>
