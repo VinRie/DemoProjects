@@ -6,7 +6,7 @@
 #include <memory>
 
 sf::Clock cellUpdateClock; // starts the clock
-sf::RenderWindow window(sf::VideoMode(1024,800), "GameOfLife");
+sf::RenderWindow window(sf::VideoMode(1024,800, sf::Style::Fullscreen), "GameOfLife");
 
 
 // Grid of Cells
