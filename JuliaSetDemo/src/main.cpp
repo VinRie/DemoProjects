@@ -1,30 +1,43 @@
 #include <SFML/Graphics.hpp>
 #include <iostream>
+#include <string>
+#include <complex>
+#include <iomanip>
+#include <ctime>
+#include <sstream>
+
+#include <stdio.h>
+#include <stdlib.h>
 
 const int WIDTH = 1200;
 const int HEIGHT = 800;
-const int MAX_ITERATION = 500;
-const double zoom_start = 0.004;
+
+
+const double zoom_start = 0.002;
+
+// f(x) = z^2 – 0.221 – 0.713 i
+std::complex <double> c(-0.940, 0.254);
+
+const int FUNCTION_THRESHOLD = 2;
+const int MAX_ITERATION = 254;
+
+
 
 
 enum {NO_UPDATE,UPDATE_AVAILABLE};
 
 sf::Image image;
 
-int calculateMandelBrotSet(long double real, long double imag){
 
-    long double start_real = real;
-    long double start_imag = imag;
-
+int calculateIterations( double &real, double &imag){
+    std::complex< double> z(real,imag);
     for(int iteration = 0; iteration < MAX_ITERATION ;iteration++){
-        long double r2 = real*real;
-        long double i2 = imag*imag;
-        if(i2+r2 > 4.0)
+        z = std::pow(z,2) + c;
+
+        if(norm(z) > FUNCTION_THRESHOLD){
             return iteration;
 
-        imag = 2 * real * imag + start_imag;
-        real = r2 - i2 + start_real;
-
+        }
     }
     return MAX_ITERATION;
 }
@@ -32,33 +45,29 @@ int calculateMandelBrotSet(long double real, long double imag){
 
 void initColorPalette(sf::Color *color_palette, const int &size){
 
-    int r=255, g=255, b=255;
+    int r=0, g=0, b=0;
     for(int i = 0; i < size; ++i){
-        if(i < 255/4) {
-            color_palette[i] = sf::Color(r, g, b);
-            r--;
-        }else if(i < 2*255/4){
+        if(i < 255/3) {
+            color_palette[i] = sf::Color(r, 0, 0);
+            r+=3;
+        }else if(i < 2*255/3){
             color_palette[i] = sf::Color(r, g, 0);
-            g--;
+            r-=3;
+            g+=3;
 
-        }else if (i < 3*255/4){
-            color_palette[i] = sf::Color(0, 0, b);
-            b--;
-        }else{
-            color_palette[i] = sf::Color(r,g, b);
-            b--;
-            g--;
-            r--;
+        }else if (i <= 255){
+            color_palette[i] = sf::Color(0, g, b);
+            g-=3;
+            b+=3;
         }
     }
-
-
-
 }
 
 int main()
 {
-    sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Mandelbrot Set Demo");
+
+    const std::string fileBaseName = "Julia Set -";
+    sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Julia Set Demo");
     window.setFramerateLimit(30);
 
 
@@ -66,7 +75,7 @@ int main()
     sf::Texture texture;
     sf::Sprite sprite;
 
-    double zoom = 0.005;
+    double zoom = zoom_start;
     double x_offset = 0.0;
     double y_offset = 0.0;
 
@@ -89,7 +98,7 @@ int main()
                 case sf::Event::Resized:
                     break;
 
-                /* Custom Input Handling */
+                    /* Custom Input Handling */
                 case sf::Event::KeyPressed:
                     status = UPDATE_AVAILABLE;
                     switch (event.key.code) {
@@ -116,15 +125,21 @@ int main()
                         case sf::Keyboard::D:
                             x_offset += 10 * zoom;
                             break;
-                        case sf::Keyboard::P:
-                            std::cout <<  "x_offset" << x_offset << ", y_offset:" << y_offset << std::endl;
+                        case sf::Keyboard::P: {
+                            auto t = std::time(nullptr);
+                            auto tm = *std::localtime(&t);
+                            std::ostringstream oss;
+                            oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
+                            auto str = oss.str();
+                            image.saveToFile(fileBaseName + str + ".png");
                             break;
+                        }
 
                         default:
                             break;
                     }
 
-                /* End Custom Input Handling */
+                    /* End Custom Input Handling */
                 case sf::Event::MouseButtonPressed:
                     if (event.mouseButton.button == sf::Mouse::Left){
                         x_offset += (event.mouseButton.x - WIDTH / 2.0) * zoom ;
@@ -142,15 +157,18 @@ int main()
         /* Start Gameupdate*/
 
         if(status == UPDATE_AVAILABLE) {
-            long double real = (0 - WIDTH  / 2.0) * zoom + x_offset ;
-            long double imag = (0 - HEIGHT / 2.0) * zoom + y_offset;
-            long double imagStart = imag;
+
+
+            double real = (0 - WIDTH  / 2) * zoom + x_offset;
+            double imag = (0 - HEIGHT / 2) * zoom + y_offset;
+            double imagStart = imag;
+
             for (unsigned int x = 0; x < WIDTH; x++, real+=zoom) {
                 imag = imagStart;
                 for (unsigned int y = 0; y < HEIGHT; y++, imag+=zoom) {
-                    int value = calculateMandelBrotSet(real,imag);
-                    image.setPixel(x, y, palette[ value % 255]);
-                }
+
+                    int value = calculateIterations(real, imag);
+                    image.setPixel(x, y, palette[ value % 255]); }
             }
             status = NO_UPDATE;
         }
